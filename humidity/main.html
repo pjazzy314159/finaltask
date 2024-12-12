@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InfluxDB Data Viewer</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #002b36;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            margin: 20px;
+            color: #2aa198;
+        }
+
+        button {
+            background-color: #2aa198;
+            color: #ffffff;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        button:hover {
+            background-color: #1d6e6c;
+        }
+
+        #dataContainer {
+            width: 90%;
+            max-width: 800px;
+            margin: 20px auto;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        table, th, td {
+            border: 1px solid #073642;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #073642;
+            color: #2aa198;
+        }
+
+        tr:nth-child(even) {
+            background-color: #073642;
+        }
+
+        tr:nth-child(odd) {
+            background-color: #002b36;
+        }
+
+        tr:hover {
+            background-color: #586e75;
+        }
+
+        .no-data-message {
+            color: #ff6e6e;
+            text-align: center;
+        }
+
+        .temperature-cell {
+            font-weight: bold;
+        }
+
+        .temperature-unit {
+            font-size: 0.9em;
+            color: #93a1a1;
+        }
+    </style>
+</head>
+<body>
+    <h1>InfluxDB Data Viewer</h1>
+    <button id="fetchData">Fetch Data</button>
+    <div id="dataContainer">
+        <div id="data"></div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Time</th>
+                    <th>Value</th>
+                </tr>
+            </thead>
+            <tbody id="dataBody">
+                <!-- Data will be injected here -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            return date.toISOString().slice(0, 19).replace('T', ' '); 
+        fetch('http://20.234.51.177/api/v1/get-data')
+            .then(response => response.json())  
+            .then(data => {
+                const container = document.getElementById('data');
+
+                if (data.length === 0) {
+                    container.innerHTML = '<p class="no-data-message">No data found.</p>';
+                } else {
+                    const table = document.createElement('table');
+                    const headerRow = document.createElement('tr');
+                    const headers = ['_time', 'Temperature']; 
+
+                    headers.forEach(header => {
+                        const th = document.createElement('th');
+                        th.textContent = header;
+                        headerRow.appendChild(th);
+                    });
+                    table.appendChild(headerRow);                   
+                    data.forEach(item => {
+                        const row = document.createElement('tr');
+
+                        
+                        const fields = ['_time', '_value']; 
+                        fields.forEach((field, index) => {
+                            const td = document.createElement('td');
+                            if (field === '_value') {
+                                td.classList.add('temperature-cell');
+                                td.textContent = item[field] || 'N/A';  
+                                td.innerHTML += '<span class="temperature-unit"> °C</span>';  
+                            } else if (field === '_time') {
+                                td.textContent = formatDate(item[field]) || 'N/A';  
+                            } else {
+                                td.textContent = item[field] || 'N/A'; 
+                            }
+                            row.appendChild(td);
+                        });
+
+                        table.appendChild(row);
+                    });
+                    container.appendChild(table);
+                }
+            })
+            .catch(err => {
+                console.error('Error fetching data:', err);
+                document.getElementById('data').innerHTML = '<p class="no-data-message">Failed to load data.</p>';
+            });
+
+        document.getElementById('fetchData').addEventListener('click', async () => {
+
+            try {
+                const response = await fetch('/api/influxdb-data');
+                if (!response.ok) {
+                    throw new Error(`Error fetching data: ${response.statusText}`);
+                }
+                const data = await response.json();
+
+                if (!Array.isArray(data)) {
+                    throw new Error('Invalid data format received from server');
+                }
+
+                const tableBody = document.getElementById('dataBody');
+                tableBody.innerHTML = '';
+                data.forEach(item => {
+                    if (item.time && item.value !== undefined) {
+                        const row = document.createElement('tr');
+
+                        const timeCell = document.createElement('td');
+                        timeCell.textContent = item.time;
+                        row.appendChild(timeCell);
+
+                        const valueCell = document.createElement('td');
+                        valueCell.textContent = item.value;
+                        row.appendChild(valueCell);
+
+                        tableBody.appendChild(row);
+                    }
+                });
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to fetch data. Check the console for details.');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+@protocol = http
+@host = {{$dotenv HOST}}
+@port = {{$dotenv PORT}}
+
+@baseurl = {{protocol}}://{{host}}:{{port}}
+
+### GET Base endpoint
+GET {{baseurl}}/
+
+### GET Test queryparams
+GET {{baseurl}}/test?value=1234&tag=app
+
+### GET Write data point
+GET {{baseurl}}/embed?value=100
+
+### Get api endpoint
+GET {{baseurl}}/api/v1
+
+

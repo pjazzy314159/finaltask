@@ -1,0 +1,22 @@
+{
+  "name": "cloud-api",
+  "version": "1.0.0",
+  "description": "bash npm install express @influxdata/influxdb-client",
+  "main": "index.js",
+  "scripts": {
+    "start": "node --env-file=.env src/server.mjs",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "node --env-file=.env --watch-path=src src/server.mjs"
+  },
+  "type": "module",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@influxdata/influxdb-client": "^1.35.0",
+    "express": "^4.21.2"
+  },
+  "directories": {
+    "test": "test"
+  }
+}
